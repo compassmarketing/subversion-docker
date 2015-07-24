@@ -13,15 +13,11 @@ MSG	'Install Subversion'
 DEBIAN_FRONTEND=noninteractive apt-get install -y subversion
 
 MSG	'Adding Subversion server user and group'
-adduser --system --shell /usr/sbin/nologin --no-create-home --disabled-login svnsrv
-addgroup --system svnsrv
-adduser svnsrv svnsrv
+adduser --system --shell /usr/sbin/nologin --no-create-home --disabled-login "${SVN_SRV_USER}"
+addgroup --system "${SVN_SRV_GROUP}"
+adduser "${SVN_SRV_USER}" "${SVN_SRV_GROUP}"
 
 MSG	'Creating Subversion repo'
-mkdir -p /srv/svn
-chown svnsrv:svnsrv /srv/svn
-sudo -u svnsrv -g svnsrv svnadmin create /srv/svn
-
-MSG	'Configuring default user'
-sudo -u svnsrv -g svnsrv echo $'[general]\npassword-db = passwd' > /srv/svn/conf/svnserve.conf
-sudo -u svnsrv -g svnsrv echo $'[users]\nusersvn = passsvn' > /srv/svn/conf/passwd
+mkdir -p "${SVN_REPO_DIR}"
+chown "${SVN_SRV_USER}":"${SVN_SRV_GROUP}" "${SVN_REPO_DIR}"
+sudo -u "${SVN_SRV_USER}" -g "${SVN_SRV_GROUP}" svnadmin create "${SVN_REPO_DIR}"
