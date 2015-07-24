@@ -9,5 +9,5 @@ ERROR() {
         exit 1
 }
 
-MSG 'Updating repos'
+MSG	'Updating repos'
 apt-get update

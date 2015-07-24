@@ -9,9 +9,9 @@ ERROR() {
         exit 1
 }
 
-MSG 'Cleaning up'
+MSG	'Cleaning up'
 apt-get -y clean
 rm -rf	/var/lib/apt/lists/* \
 	/tmp/* \
 	/var/tmp/*
-MSG 'DONE'
+MSG	'DONE'
