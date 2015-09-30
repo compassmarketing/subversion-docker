@@ -1,13 +1,6 @@
 #!/bin/bash
 
-MSG() {
-        echo "=== $1"
-}
-
-ERROR() {
-        echo "--- $1"
-        exit 1
-}
+source /usr/local/include/shell-tools.shh
 
 SVN_USER=${SVN_USER:-svnuser}
 SVN_PASS=${SVN_PASS:-svnpass}
@@ -24,3 +17,4 @@ echo $'[general]\npassword-db = passwd' > "${SVN_REPO_DIR}"/conf/svnserve.conf
 echo $'[users]\n'"${SVN_USER}"' = '"${SVN_PASS}"$'\n' > "${SVN_REPO_DIR}"/conf/passwd
 
 exec /usr/bin/svnserve -d --listen-port="${SVN_PORT}" --foreground --threads --root "${SVN_REPO_ROOT}"
+exit 1
