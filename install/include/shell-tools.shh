@@ -1,28 +1,28 @@
 #!/bin/bash
 
 MSG() {
-	local msg="---- $1"
+	local msg='---- '$1
 	echo ${msg}
 	return 0
 }
 
 MSG_begin() {
-	local msg="~~~~ $1"
+	local msg='~~~~ '$1
 	echo -n ${msg}
 }
 
 MSG_cont() {
-	echo -n "$1"
+	echo -n $1
 }
 
 MSG_end() {
-	echo "$1"
+	echo $1
 }
 
 _shell_tools_LOGs=''
 _shell_tools_INFOs=''
 INFO() {
-	local msg="-II- $1"
+	local msg='-II- '$1
 	echo ${msg}
 	_shell_tools_LOGs+=${msg}
 	_shell_tools_LOGs+=$'\n'
@@ -38,7 +38,7 @@ print_INFO() {
 
 _shell_tools_WARNs=''
 WARN() {
-	local msg="-WW- $1"
+	local msg='-WW- '$1
 	echo ${msg}
 	_shell_tools_LOGs+=${msg}
 	_shell_tools_LOGs+=$'\n'
@@ -54,7 +54,7 @@ print_WARN() {
 
 _shell_tools_ERRORs=''
 ERROR() {
-	local msg="-EE- $1"
+	local msg='-EE- '$1
 	echo ${msg}
 	_shell_tools_LOGs+=${msg}
 	_shell_tools_LOGs+=$'\n'
@@ -69,7 +69,7 @@ print_ERROR() {
 }
 
 FATAL() {
-	local msg="-XX- $1"
+	local msg='-XX- '$1
 	echo ${msg}
 	exit 1
 }
@@ -82,7 +82,18 @@ sleep_listening() {
 
 waitonstart() {
 	MSG_begin	"Waiting on $1 to start ..."
-	until pgrep "$1"
+	until pgrep "$1" >/dev/null
+	do {
+		sleep 2
+		MSG_cont '.'
+	}
+	done
+	MSG_end ' Done'
+}
+
+waitonstart_full() {
+	MSG_begin	"Waiting on \"$1\" to start ..."
+	until pgrep -f "$1" >/dev/null
 	do {
 		sleep 2
 		MSG_cont '.'
@@ -93,7 +104,33 @@ waitonstart() {
 
 waitonstop() {
 	MSG_begin	"Waiting on $1 to stop ..."
-	while pgrep "$1"
+	while pgrep "$1" >/dev/null
+	do {
+		sleep 2
+		MSG_cont '.'
+	}
+	done
+	MSG_end ' Done'
+}
+
+waitonstop_full() {
+	MSG_begin	"Waiting on \"$1\" to stop ..."
+	while pgrep -f "$1" >/dev/null
+	do {
+		sleep 2
+		MSG_cont '.'
+	}
+	done
+	MSG_end ' Done'
+}
+
+waitonport() {
+# $1 port
+# $2 hostname or localhost by default
+	local hostname="${2:-localhost}"
+
+	MSG_begin	"Waiting on port $1 to begin listening ..."
+	until nc -z ${hostname} "$1" >/dev/null
 	do {
 		sleep 2
 		MSG_cont '.'
