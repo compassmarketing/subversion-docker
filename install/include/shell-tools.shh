@@ -1,75 +1,44 @@
 #!/bin/bash
 
 MSG() {
-	local msg='---- '$1
+	local msg='---- '"$1"
 	echo ${msg}
 	return 0
 }
 
 MSG_begin() {
-	local msg='~~~~ '$1
+	local msg='~~~~ '"$1"
 	echo -n ${msg}
 }
 
 MSG_cont() {
-	echo -n $1
+	echo -n "$1"
 }
 
 MSG_end() {
-	echo $1
+	echo "$1"
 }
 
-_shell_tools_LOGs=''
-_shell_tools_INFOs=''
 INFO() {
-	local msg='-II- '$1
+	local msg='-II- '"$1"
 	echo ${msg}
-	_shell_tools_LOGs+=${msg}
-	_shell_tools_LOGs+=$'\n'
-	_shell_tools_INFOs+=${msg}
-	_shell_tools_INFOs+=$'\n'
 	return 0
 }
-print_INFO() {
-	echo '==== Warnings =========================='
-	echo ${_shell_tools_INFOs}
-	echo '========================================'
-}
 
-_shell_tools_WARNs=''
 WARN() {
-	local msg='-WW- '$1
+	local msg='-WW- '"$1"
 	echo ${msg}
-	_shell_tools_LOGs+=${msg}
-	_shell_tools_LOGs+=$'\n'
-	_shell_tools_WARNs+=${msg}
-	_shell_tools_WARNs+=$'\n'
 	return 0
 }
-print_WARN() {
-	echo '==== Warnings =========================='
-	echo ${_shell_tools_WARNs}
-	echo '========================================'
-}
 
-_shell_tools_ERRORs=''
 ERROR() {
-	local msg='-EE- '$1
+	local msg='-EE- '"$1"
 	echo ${msg}
-	_shell_tools_LOGs+=${msg}
-	_shell_tools_LOGs+=$'\n'
-	_shell_tools_ERRORs+=${msg}
-	_shell_tools_ERRORs+=$'\n'
 	return 1
-}
-print_ERROR() {
-	echo '==== Errors ============================'
-	echo ${_shell_tools_ERRORs}
-	echo '========================================'
 }
 
 FATAL() {
-	local msg='-XX- '$1
+	local msg='-XX- '"$1"
 	echo ${msg}
 	exit 1
 }
@@ -80,61 +49,241 @@ sleep_listening() {
 	wait $!
 }
 
-waitonstart() {
-	MSG_begin	"Waiting on $1 to start ..."
-	until pgrep "$1" >/dev/null
-	do {
-		sleep 2
-		MSG_cont '.'
+check_process() {
+# $1 process name
+	pgrep "$1" >/dev/null
+
+	local rval=$?
+	if (( ${rval} > 1 ))
+	then {
+		FATAL 'Fatal error when checking process'
 	}
-	done
-	MSG_end ' Done'
+	else {
+		return ${rval}
+	}
+	fi
+}
+
+check_process_full() {
+# $1 process startup command regex
+	pgrep -f "$1" >/dev/null
+
+	local rval=$?
+	if (( ${rval} > 1 ))
+	then {
+		FATAL 'Fatal error when checking process regex'
+	}
+	else {
+		return ${rval}
+	}
+	fi
+}
+
+n_of_checks() {
+# $1 time to wait
+# $2 check interval
+	# Check wait time
+	if (( $1 < 1 ))
+	then {
+		FATAL 'Invalid wait time given'
+	}
+	fi
+
+	# Check wait check interval
+	if (( $2 < 1 ))
+	then {
+		FATAL 'Invalid check interval given'
+	}
+	fi
+
+	# Round up integer division
+	if (( ${waittime} % ${waitinterval} > 0 ))
+	then {
+		echo "(( ${waittime} / ${waitinterval} + 1 ))"
+		return 0
+	}
+	else {
+		echo "(( ${waittime} / ${waitinterval} ))"
+		return 0
+	}
+	fi
+	return 1
+}
+
+_waitonprocess() {
+# $1 match string
+# $2 match type ( "proc", "regex" )
+# $3 wait type ( "start", "stop")
+
+# Optional
+# $4 time to wait
+# $5 check interval
+	local waittime=${4:-300}
+	local waitinterval=${5:-2}
+
+	# Check wait type
+	if [[ $3 == 'start' ]]
+	then {
+		local check_status=0
+	}
+	elif [[ $3 == 'stop' ]]
+	then {
+		local check_status=1
+	}
+	else {
+		FATAL "Invalid wait type $3"
+	}
+	fi
+
+	local checks=$(n_of_checks ${waittime} ${waitinterval})
+
+	MSG_begin	"Waiting on $1 to $3 ..."
+	local rval=1
+	#Check type
+	if [[ $2 == 'proc' ]]
+	then {
+		for (( i=${checks}; i; i-- ))
+		do {
+			sleep ${waitinterval}
+			MSG_cont '.'
+
+			check_process "$1"
+
+			if [[ $? == ${check_status} ]]
+			then {
+				rval=0
+				break
+			}
+			fi
+		}
+		done
+	}
+	elif [[ $2 == 'regex' ]]
+	then {
+		for (( i=${checks}; i; i-- ))
+		do {
+			sleep ${waitinterval}
+			MSG_cont '.'
+
+			check_process_full "$1"
+
+			if [[ $? == ${check_status} ]]
+			then {
+				rval=0
+				break
+			}
+			fi
+		}
+		done
+	}
+	else {
+		MSG_end ' FATAL'
+		FATAL "Invalid match type $2"
+	}
+	fi
+
+	# Decode result
+	if [[ ${rval} == 0 ]]
+	then {
+		MSG_end ' Done'
+		return 0
+	}
+	else {
+		MSG_end ' FAILED - Timeout'
+		return 1
+	}
+	fi
+}
+
+waitonstart(){
+# $1 process name
+# $2 time to wait
+# $3 check interval
+	_waitonprocess "$1" 'proc' 'start' "$2" "$3"
 }
 
 waitonstart_full() {
-	MSG_begin	"Waiting on \"$1\" to start ..."
-	until pgrep -f "$1" >/dev/null
-	do {
-		sleep 2
-		MSG_cont '.'
-	}
-	done
-	MSG_end ' Done'
+# $1 process name
+# $2 time to wait
+# $3 check interval
+	_waitonprocess "$1" 'regex' 'start' "$2" "$3"
 }
 
 waitonstop() {
-	MSG_begin	"Waiting on $1 to stop ..."
-	while pgrep "$1" >/dev/null
-	do {
-		sleep 2
-		MSG_cont '.'
-	}
-	done
-	MSG_end ' Done'
+# $1 process name
+# $2 time to wait
+# $3 check interval
+	_waitonprocess "$1" 'proc' 'stop' "$2" "$3"
 }
 
 waitonstop_full() {
-	MSG_begin	"Waiting on \"$1\" to stop ..."
-	while pgrep -f "$1" >/dev/null
-	do {
-		sleep 2
-		MSG_cont '.'
+# $1 process name
+# $2 time to wait
+# $3 check interval
+	_waitonprocess "$1" 'regex' 'stop' "$2" "$3"
+}
+
+check_port() {
+# $1 port
+
+# Optional
+# $2 hostname or localhost by default
+	local hostname="${2:-localhost}"
+
+	nc -z "${hostname}" "$1" >/dev/null
+
+	local rval=$?
+	if (( ${rval} > 1 ))
+	then {
+		FATAL 'Fatal error when checking port'
 	}
-	done
-	MSG_end ' Done'
+	else {
+		return ${rval}
+	}
+	fi
 }
 
 waitonport() {
 # $1 port
-# $2 hostname or localhost by default
-	local hostname="${2:-localhost}"
+
+# Optional
+# $2 time to wait
+# $3 check interval
+# $4 hostname or localhost by default
+	local waittime=${2:-300}
+	local waitinterval=${3:-2}
+	local hostname="${4:-localhost}"
+
+	local checks=$(n_of_checks ${waittime} ${waitinterval})
 
 	MSG_begin	"Waiting on port $1 to begin listening ..."
-	until nc -z ${hostname} "$1" >/dev/null
+
+	local rval=1
+	for (( i=${checks}; i; i-- ))
 	do {
-		sleep 2
+		check_port "$1" "${hostname}"
+
+		if [[ $? == 0 ]]
+		then {
+			rval=0
+			break
+		}
+		fi
+
+		sleep ${waitinterval}
 		MSG_cont '.'
 	}
 	done
-	MSG_end ' Done'
+
+	# Decode result
+	if [[ ${rval} == 0 ]]
+	then {
+		MSG_end ' Done'
+		return 0
+	}
+	else {
+		MSG_end ' FAILED - Timeout'
+		return 1
+	}
+	fi
 }
