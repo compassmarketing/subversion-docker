@@ -10,8 +10,8 @@ MSG	'Installing Compass Tools'
 chmod 644 ${COMPASS_SOURCES_DIR}/include/*
 cp ${COMPASS_SOURCES_DIR}/include/* /usr/local/include/
 
-chmod 755 ${COMPASS_SOURCES_DIR}/tools/*
-cp ${COMPASS_SOURCES_DIR}/tools/* /usr/local/bin/
+chmod 755 ${COMPASS_SOURCES_DIR}/bin/*
+cp ${COMPASS_SOURCES_DIR}/bin/* /usr/local/bin/
 
 MSG	'Adding Subversion server user and group'
 addgroup --system --gid "${DOCKER_GID}" "${SVN_SRV_GROUP}"
