@@ -1,11 +1,21 @@
 #!/bin/bash
 
 #	$1	Timeout
+#	$2	Check interval
 
-for (( i=$1; i; i-- ))
+source /usr/local/include/shell-tools.shh
+
+waittime=${1:-300}
+waitinterval=${2:-2}
+
+checks=$(n_of_checks ${waittime} ${waitinterval})
+
+for (( i=${checks}; i; i-- ))
 do {
-	sleep 1
-	svn info "svn://$HOSTNAME/$SVN_REPO" && exit 0
+	sleep ${waitinterval}
+
+	svn info "svn://$HOSTNAME/$SVN_REPO" \
+	&& exit 0
 }
 done
 exit 1
