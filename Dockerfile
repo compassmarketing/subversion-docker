@@ -1,6 +1,9 @@
-FROM	ubuntu:14.04
+FROM	ubuntu:16.04
 
-ENV	COMPASS_SOURCES_DIR="/root/install" \
+ENV	\
+	DOCKER_UID=499 \
+	DOCKER_GID=499 \
+	COMPASS_SOURCES_DIR="/root/install" \
 	SVN_REPO_ROOT="/srv/svn" \
 	SVN_SRV_USER="svnsrv" \
 	SVN_SRV_GROUP="svnsrv"
@@ -13,6 +16,8 @@ RUN	${COMPASS_SOURCES_DIR}/ubuntu-begin.sh \
 
 COPY	exec.sh	/etc/init.d/
 
+VOLUME	${SVN_REPO_ROOT}
+
 EXPOSE	3690
-USER	${SVN_SRV_USER}
+# USER	${SVN_SRV_USER}
 ENTRYPOINT	["/etc/init.d/exec.sh"]
