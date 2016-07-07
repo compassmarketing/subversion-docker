@@ -2,7 +2,7 @@
 
 source ${COMPASS_SOURCES_DIR}/include/shell-tools.shh
 
-MSG	'Install Subversion'
+MSG	'Installing Subversion and netcat'
 DEBIAN_FRONTEND=noninteractive apt-get install -y subversion \
 	netcat
 
