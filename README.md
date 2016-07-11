@@ -19,7 +19,6 @@ Variable | Description | Notes
 `SVN_SRV_USER` | SVN server unprivileged user |
 `SVN_SRV_GROUP` | SVN server unprivileged group |
 
-
 ##### Dockerfile Scripts
 
 Script | Description | Notes
@@ -36,10 +35,11 @@ Start the container normally.  For example:
 docker run -d --net=host --name=js <host volumes> <variables> compassventures/subversion
 ```
 
-> Attach host volumes with:<br />
-> `--volume=/host-mountpoint:/container-mountpoint`
+##### Volumes
 
-##### Environmental Variables
+The container exposes the SVN root directory (`${SVN_REPO_ROOT}`) as a volume.
+
+##### Environment Variables
 
 The following variables configure the container:
 
@@ -49,6 +49,22 @@ Variable | Description | Notes
 `SVN_PASS` | Client Password | **Required** <br /> Default is *svnpass*
 `SVN_REPO` | Repository name (inside the repository root) | **Required** <br /> Default is *default*
 `SVN_PORT` | Server Port | **Use default** <br /> Default is *3690*
+
+##### Helper scripts
+
+Helper scripts are usually invoked with `docker exec` for specific functions
+
+Syntax | Description
+------ | -----------
+`< required >` | Required parameter
+`[ optional ]` | Optional parameter
+
+- `check-running.sh [ timeout [interval] ]`
+
+  Tests if the container's processes have finished initializing.
+
+  - `timeout` - Timeout to wait before returning a failure
+  - `interval` - Interval between state checks
 
 ### Notes
 
